@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Charity Register Online</title>
+
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin: 0;
+  background: #fafafa;
+  color: #111;
+}
+
+header {
+  background: #fff;
+  border-bottom: 1px solid #e5e5e5;
+  padding: 20px;
+}
+
+h1 { margin: 0; }
+
+.container {
+  max-width: 1100px;
+  margin: auto;
+  padding: 30px 20px;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+input, select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.card {
+  background: #fff;
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid #eee;
+  margin-bottom: 14px;
+  transition: 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 18px rgba(0,0,0,0.05);
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid #ddd;
+  margin-right: 6px;
+}
+
+.featured {
+  border-color: #000;
+  font-weight: 600;
+}
+
+button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #f3f3f3;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 30px;
+  border-radius: 14px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>Charity Register Online</h1>
+  <p>Searchable directory of local charities + events</p>
+</header>
+
+<div class="container">
+
+  <div class="controls">
+    <input id="search" placeholder="Search organizations..." />
+    <select id="categoryFilter">
+      <option value="">All Categories</option>
+    </select>
+    <label>
+      <input type="checkbox" id="featuredOnly" />
+      Featured Only
+    </label>
+  </div>
+
+  <h2>Organizations</h2>
+  <div id="orgList"></div>
+
+  <h2 style="margin-top:40px;">Upcoming Events</h2>
+  <div id="eventList"></div>
+
+</div>
+
+<div class="modal" id="orgModal">
+  <div class="modal-content" id="modalContent"></div>
+</div>
+
+<script>
+const data = {
+  organizations: [
+    {
+      id: "pbg-youth-mentors",
+      name: "PBG Youth Mentors",
+      category: "Children",
+      city: "Palm Beach Gardens",
+      featured: true,
+      description: "Mentoring and enrichment programs helping local youth thrive.",
+      website: "https://example.org"
+    },
+    {
+      id: "coastal-animal-aid",
+      name: "Coastal Animal Aid",
+      category: "Animals",
+      city: "Jupiter",
+      featured: false,
+      description: "Rescue, rehabilitation, and adoption support for animals.",
+      website: "https://example.org"
+    },
+    {
+      id: "health-access-pb",
+      name: "Palm Beach Health Access",
+      category: "Health",
+      city: "West Palm Beach",
+      featured: true,
+      description: "Community clinics and health navigation services.",
+      website: "https://example.org"
+    }
+  ],
+
+  events: [
+    {
+      title: "Spring Gala 2026",
+      orgId: "pbg-youth-mentors",
+      date: "2026-04-18",
+      location: "Palm Beach Gardens",
+      type: "Gala"
+    },
+    {
+      title: "Paws for a Cause 5K",
+      orgId: "coastal-animal-aid",
+      date: "2026-03-14",
+      location: "Jupiter",
+      type: "5K"
+    }
+  ]
+};
+
+const orgList = document.getElementById("orgList");
+const eventList = document.getElementById("eventList");
+const searchInput = document.getElementById("search");
+const categoryFilter = document.getElementById("categoryFilter");
+const featuredOnly = document.getElementById("featuredOnly");
+const modal = document.getElementById("orgModal");
+const modalContent = document.getElementById("modalContent");
+
+[...new Set(data.organizations.map(o => o.category))].forEach(cat => {
+  const option = document.createElement("option");
+  option.value = cat;
+  option.textContent = cat;
+  categoryFilter.appendChild(option);
+});
+
+function renderOrgs() {
+  const search = searchInput.value.toLowerCase();
+  const category = categoryFilter.value;
+  const featured = featuredOnly.checked;
+
+  const filtered = data.organizations.filter(org => {
+    return (
+      (!search || org.name.toLowerCase().includes(search)) &&
+      (!category || org.category === category) &&
+      (!featured || org.featured)
+    );
+  });
+
+  orgList.innerHTML = filtered.map(org => `
+    <div class="card">
+      <h3>${org.name}</h3>
+      <div>
+        <span class="badge">${org.category}</span>
+        ${org.featured ? '<span class="badge featured">Featured</span>' : ''}
+      </div>
+      <p>${org.description}</p>
+      <button onclick="openModal('${org.id}')">View Details</button>
+    </div>
+  `).join("");
+}
+
+function renderEvents() {
+  eventList.innerHTML = data.events.map(event => {
+    const org = data.organizations.find(o => o.id === event.orgId);
+    return `
+      <div class="card">
+        <h4>${event.title}</h4>
+        <div class="badge">${event.type}</div>
+        <p>${event.location} — ${event.date}</p>
+        <p><strong>${org ? org.name : ""}</strong></p>
+      </div>
+    `;
+  }).join("");
+}
+
+function openModal(id) {
+  const org = data.organizations.find(o => o.id === id);
+  modalContent.innerHTML = `
+    <h2>${org.name}</h2>
+    <p><strong>${org.category}</strong> — ${org.city}</p>
+    <p>${org.description}</p>
+    <p><a href="${org.website}" target="_blank">Visit Website</a></p>
+    <button onclick="closeModal()">Close</button>
+  `;
+  modal.style.display = "flex";
+}
+
+function closeModal() {
+  modal.style.display = "none";
+}
+
+searchInput.addEventListener("input", renderOrgs);
+categoryFilter.addEventListener("change", renderOrgs);
+featuredOnly.addEventListener("change", renderOrgs);
+
+renderOrgs();
+renderEvents();
+</script>
+
+</body>
+</html>
